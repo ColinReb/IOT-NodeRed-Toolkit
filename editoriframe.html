@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+        <meta http-equiv="Pragma" content="no-cache"/>
+        <meta http-equiv="Expires" content="0"/>
+        <meta charset="UTF-8">
+        <title>ACE Editor Inside iframe</title>
+        <style type="text/css" media="screen">
+
+            table, th, td{
+                border: 1px solid #666;
+            }
+            table th, table td{
+                padding: 5px; /* Apply cell padding */
+            }
+
+            body, html { 
+                height: 100%;
+                margin:0; padding:0;
+            }    
+            #editor { 
+                padding: 20px; margin: 20px;
+                width: 95%; height: 90%;
+            }
+        </style>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajaxorg.github.io/ace-builds/src/ace.js"></script>
+    </head>
+    <body onload="init()">
+        <br/>
+        <div class="container" >
+            <table  style="display:flex;font-family:Arial;font-size:8;">
+                <tr>
+                    <td style="background-Color:mediumpurple;color:white;">
+                        Theme
+                    </td>
+
+                    <td>
+                        <select onchange="changetheme(this)" id="-theme"><optgroup label="Bright"><option value="ace/theme/chrome">Chrome</option><option value="ace/theme/clouds">Clouds</option><option value="ace/theme/crimson_editor">Crimson Editor</option><option value="ace/theme/dawn">Dawn</option><option selected value="ace/theme/dreamweaver">Dreamweaver</option><option value="ace/theme/eclipse">Eclipse</option><option value="ace/theme/github">GitHub</option><option value="ace/theme/iplastic">IPlastic</option><option value="ace/theme/solarized_light">Solarized Light</option><option value="ace/theme/textmate">TextMate</option><option value="ace/theme/tomorrow">Tomorrow</option><option value="ace/theme/xcode">Xcode</option><option value="ace/theme/kuroir">Kuroir</option><option value="ace/theme/katzenmilch">KatzenMilch</option><option value="ace/theme/sqlserver">SQL Server</option></optgroup><optgroup label="Dark"><option value="ace/theme/ambiance">Ambiance</option><option value="ace/theme/chaos">Chaos</option><option value="ace/theme/clouds_midnight">Clouds Midnight</option><option value="ace/theme/dracula">Dracula</option><option value="ace/theme/cobalt">Cobalt</option><option value="ace/theme/gruvbox">Gruvbox</option><option value="ace/theme/gob">Green on Black</option><option value="ace/theme/idle_fingers">idle Fingers</option><option value="ace/theme/kr_theme">krTheme</option><option value="ace/theme/merbivore">Merbivore</option><option value="ace/theme/merbivore_soft">Merbivore Soft</option><option value="ace/theme/mono_industrial">Mono Industrial</option><option value="ace/theme/monokai">Monokai</option><option value="ace/theme/nord_dark">Nord Dark</option><option value="ace/theme/one_dark">One Dark</option><option value="ace/theme/pastel_on_dark">Pastel on dark</option><option value="ace/theme/solarized_dark">Solarized Dark</option><option value="ace/theme/terminal">Terminal</option><option value="ace/theme/tomorrow_night">Tomorrow Night</option><option value="ace/theme/tomorrow_night_blue">Tomorrow Night Blue</option><option value="ace/theme/tomorrow_night_bright">Tomorrow Night Bright</option><option value="ace/theme/tomorrow_night_eighties">Tomorrow Night 80s</option><option value="ace/theme/twilight">Twilight</option><option value="ace/theme/vibrant_ink">Vibrant Ink</option></optgroup></select>
+                    </td>
+                    <td>&nbsp;&nbsp;</td>
+
+                    <td>
+                       <button style="background-color:mediumpurple;color:white" 
+                               onclick="DeployToBrowser()">Debug(Chrome)</button>
+                        <button style="background-color:mediumpurple;color:white" 
+                                onclick="parent.DeployToNode();">DeployCode => NodeRed(PC)</button>
+                        <button style="background-color:red;color:white" 
+                                onclick="parent.checkandsend('simulator')">Run-Test</button>
+
+                    </td>
+                </tr>
+            </table>
+
+        </div>
+        <div id="editor" >
+
+        </div>
+
+        <div>
+            Credits:https://ace.c9.io/build/kitchen-sink.html
+        </div>
+        <script>
+
+
+            var editor = null;
+            function init()
+            {
+                editor = ace.edit("editor");
+                var theme = document.querySelector("#-theme");
+                //editor.setTheme("ace/theme/monokai");
+                //editor.setTheme("ace/theme/Mreq Light");
+                console.log(theme.value);
+                editor.setTheme(theme.value);
+                editor.session.setMode("ace/mode/javascript");
+                GetNodeCode();
+            }
+            
+            function BrowserSideTest()
+            {
+               parent.checkandsend("local");
+               alert("Note: If the debugger did not open go to Chrome Dev Tools and open it.\n See the console log for run results.");
+            }
+            function GetNodeCode()
+            {
+                var scode = parent.Editor_getNodeCode();
+                //function (data){
+                //chop off the function part upto and incl the first brace
+                var idx = scode.indexOf("{");
+                scode = scode.substring(idx + 1);
+                //chop off the last }
+                idx = scode.lastIndexOf("}");
+                scode = scode.substring(0, idx);
+                editor.setValue(scode);
+            }
+            var test = null;
+            function DeployToBrowser()
+            {
+                var scode = editor.getValue();
+                scode = "function (data){ " + scode + "}";
+                try {
+                    eval("test=" + scode);
+                } catch (e) {
+                    if (e instanceof SyntaxError) {
+                        alert(e.message);
+                        return;
+                    } else {
+                        alert(e);
+                        return;
+                    }
+                }
+                console.log("New code eval..ed ok");
+                scode = "function (data){ debugger; \n" + editor.getValue() + "}";
+                parent.Editor_setNodeCode(scode);
+                BrowserSideTest();
+            }
+
+            function changetheme(obj)
+            {
+                console.log('set theme to ' + obj.value);
+                editor.setTheme(obj.value);
+            }
+            function initAceEditor() {
+                editor.setTheme("ace/theme/solarized_light");
+                editor.session.setMode("ace/mode/javascript");
+                editor.setFontSize("15px");
+                editor.setPrintMarginColumn(false);
+                //editor.setValue($("#file-content").text());
+            }
+        </script>
+    </body>
+</html>
